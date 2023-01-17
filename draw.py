@@ -5,12 +5,17 @@ import numpy as np
 
 
 def draw(f: StringIO):
-    lines = list(map(lambda x0: x0.split(), f.readlines()))
-    labels = lines[0]
-    arr = np.array(lines[1:], dtype="int32")
+    lines = iter(f.readlines())
+    updaters = int(next(lines).split("/")[0])
+    tick_per_mil = int(next(lines).split("/")[0])
+    labels = next(lines).split()
+
+    lines = map(lambda x0: x0.split(), lines)
+
+    arr = np.array(list(lines), dtype="int32")
     size, row = arr.shape
 
-    x = np.arange(size)
+    x = np.linspace(0, size / tick_per_mil / updaters, size)
 
     fig, ax = plt.subplots()
     ax.get_yaxis().set_visible(False)

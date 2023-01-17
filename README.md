@@ -22,7 +22,7 @@ from draw import draw
 with StringIO() as f:
     m = Machine(f, dump_signals=[
         'a'
-    ])
+    ], tick_per_mil=1000)
 
 
     def updater1(u: Machine):
@@ -33,8 +33,8 @@ with StringIO() as f:
 
     m.add_updater(updater1)
 
-    for i in range(21):
-        m.update(1)
+    for i in range(int(m.calc_sim_time(21))):
+        m.update(m.get_mil_per_tick())
 
     f.seek(0)
     draw(f)

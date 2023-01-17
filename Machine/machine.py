@@ -33,16 +33,22 @@ class Signal(object):
 
 
 class Machine(object):
-    def __init__(self, fd, dump_signals):
+    def __init__(self, fd, dump_signals, tick_per_mil):
         self.millis = 0.0
         self._timestamps = {}
         self._signals = {}
         self._signals_obj = {}
         self._dump_signals = dump_signals
         self._updaters = []
+        self._tick_per_mil = tick_per_mil
 
         self.fd = fd
-        self._dump_sig_header()
+
+    def calc_sim_time(self, t):
+        return t * self._tick_per_mil
+
+    def get_mil_per_tick(self):
+        return 1 / self._tick_per_mil
 
     def update(self, delta: float):
         for up in self._updaters:
@@ -52,6 +58,8 @@ class Machine(object):
         self.millis += delta
 
     def _dump_sig_header(self):
+        self.fd.write(f"{len(self._updaters)}/updaters\n")
+        self.fd.write(f"{self._tick_per_mil}/1ms\n")
         self.fd.write(" ".join(self._dump_signals) + "\n")
 
     def dump_sig(self):
@@ -85,6 +93,8 @@ class Machine(object):
     # Public Functions
     def add_updater(self, updater):
         self._updaters.append(updater)
+        self.fd.seek(0)
+        self._dump_sig_header()
 
     def get_signal(self, name):
         sig = self._signals_obj.get(name, None)
@@ -103,7 +113,7 @@ if __name__ == '__main__':
     with StringIO() as f:
         m = Machine(f, dump_signals=[
             'a'
-        ])
+        ], tick_per_mil=1000)
 
 
         def updater1(u: Machine):
@@ -114,8 +124,8 @@ if __name__ == '__main__':
 
         m.add_updater(updater1)
 
-        for i in range(21):
-            m.update(1)
+        for i in range(int(m.calc_sim_time(21))):
+            m.update(m.get_mil_per_tick())
 
         f.seek(0)
         draw(f)

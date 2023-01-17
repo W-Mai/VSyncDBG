@@ -57,13 +57,13 @@ if __name__ == '__main__':
         machine = Machine(f, dump_signals=[
             'lcd_c', 'poll', 'render', 'render_buffer',
             'commit_buffer', 'send_buffer'
-        ])
+        ], tick_per_mil=10)
 
         machine.add_updater(Prj.update_lcd_c)
         machine.add_updater(Prj.update_render)
 
-        for i in range(500):
-            machine.update(1)
+        for i in range(int(machine.calc_sim_time(500))):
+            machine.update(machine.get_mil_per_tick())
 
         f.seek(0)
 
