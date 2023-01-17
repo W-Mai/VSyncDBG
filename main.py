@@ -1,99 +1,75 @@
 from io import StringIO
-
+from Machine import Machine
 from draw import draw
 
 
-class Machine(object):
-    def __init__(self, fd, dump_signals):
-        self.millis = 0.0
-        self._timestamps = {}
-        self._signals = {}
-        self._dump_signals = dump_signals
+class Prj(object):
 
-        self.fd = fd
-        self.dump_sig_header()
+    @staticmethod
+    def update_lcd_c(m: Machine):
+        lcd_c = m.get_signal("lcd_c")
 
-    def update(self, delta: float):
-        self.millis += delta
-
-        self._update_lcd_c()
-        print(self.dump_sig())
-        self._update_render()
-        print(self.dump_sig())
-
-    def dump_sig_header(self):
-        self.fd.write(" ".join(self._dump_signals) + "\n")
-
-    def dump_sig(self):
-        self.fd.write(" ".join(map(str, [
-            self._signals.get(key, 0) for key in self._dump_signals
-        ])) + "\n")
-
-        return {
-            key: self._signals.get(key, 0) for key in self._dump_signals
-        }
-
-    def _get_time(self, key):
-        if not self._timestamps.get(key, None):
-            self._timestamps[key] = self.millis
-        return self._timestamps[key]
-
-    def _set_time(self, key, val):
-        self._timestamps[key] = val
-
-    def _set_current_time(self, key):
-        self._timestamps[key] = self.millis
-
-    def _get_signal(self, key):
-        if not self._signals.get(key, None):
-            self._signals[key] = 0
-        return self._signals[key]
-
-    def _set_signal(self, key, val):
-        self._signals[key] = val
-
-    def _update_lcd_c(self):
-        if self._get_signal("lcd_c") == 0:
-            if self.millis - self._get_time("lcd_c") > 7:
-                self._set_signal("lcd_c", 1)
-                self._set_current_time("lcd_c")
-                self._te_intr()
+        if lcd_c.get() == 0:
+            lcd_c.keep(7)
+            if not lcd_c.keeping():
+                lcd_c.set(1)
+                lcd_c.update_time()
+                Prj.te_intr(m)
         else:
-            if self.millis - self._get_time("lcd_c") > 35:
-                self._set_signal("lcd_c", 0)
-                self._frame_done()
-                self._set_current_time("lcd_c")
+            lcd_c.keep(15)
+            if not lcd_c.keeping():
+                lcd_c.set(0)
+                lcd_c.update_time()
+                Prj.frame_done(m)
 
-    # call
-    def _te_intr(self):
-        if self._get_signal("poll") == 0:
-            self._set_signal("poll", 1)
-        self._set_signal("send_buffer", self._get_signal("commit_buffer"))
+    @staticmethod
+    def update_render(m: Machine):
+        poll = m.get_signal("poll")
+        render = m.get_signal("render")
+        render_buffer = m.get_signal("render_buffer")
+        commit_buffer = m.get_signal("commit_buffer")
 
-    def _frame_done(self):
+        if poll.get() and render.get() != 1:
+            render.set(1)
+            render.update_time()
+
+        if render.get() == 1:
+            render.keep(43)
+            if not render.keeping():
+                render.set(0)
+                poll.set(0)
+
+                commit_buffer.set(render_buffer.get())
+                render_buffer.set(1 - render_buffer.get())
+
+    @staticmethod
+    def te_intr(m: Machine):
+        poll = m.get_signal("poll")
+        send_buffer = m.get_signal("send_buffer")
+        commit_buffer = m.get_signal("commit_buffer")
+
+        if poll.get() == 0:
+            poll.set(1)
+        send_buffer.set(commit_buffer.get())
+
+    @staticmethod
+    def frame_done(m: Machine):
         pass
-
-    def _update_render(self):
-        if self._get_signal("poll") and self._get_signal("render") != 1:
-            self._set_signal("render", 1)
-            self._set_current_time("render")
-
-        if self._get_signal("render") == 1:
-            if self.millis - self._get_time("render") > 43:
-                self._set_signal("render", 0)
-                self._set_signal("poll", 0)
-                self._set_signal("commit_buffer", self._get_signal("render_buffer"))
-                self._set_signal("render_buffer", 1 - self._get_signal("render_buffer"))
 
 
 if __name__ == '__main__':
     with StringIO() as f:
-        m = Machine(f, dump_signals=[
+        machine = Machine(f, dump_signals=[
             'lcd_c', 'poll', 'render', 'render_buffer',
             'commit_buffer', 'send_buffer'
         ])
+
+        machine.add_updater(Prj.update_lcd_c)
+        machine.add_updater(Prj.update_render)
+
         for i in range(500):
-            m.update(1)
+            machine.update(1)
 
         f.seek(0)
+
         draw(f)

@@ -26,6 +26,9 @@ class Signal(object):
     def set(self, val):
         return self._machine._set_signal(self._name, val)
 
+    def update_time(self):
+        self._machine._set_current_time(self._name)
+
 
 class Machine(object):
     def __init__(self, fd, dump_signals):
@@ -44,6 +47,7 @@ class Machine(object):
 
         for up in self._updaters:
             up(self)
+            self.dump_sig()
 
     def _dump_sig_header(self):
         self.fd.write(" ".join(self._dump_signals) + "\n")
