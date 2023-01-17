@@ -8,7 +8,17 @@ class Machine(object):
         self.millis += delta
 
         self._update_lcd_c()
+        print(self.dump_sig())
         self._update_render()
+        print(self.dump_sig())
+
+    def dump_sig(self):
+        return {
+            key: self._signals.get(key, 0) for key in [
+                'lcd_c', 'poll', 'render',
+                'buffer', 'send', 'mipi_busy'
+            ]
+        }
 
     def _get_time(self, key):
         if not self._timestamps.get(key, None):
@@ -37,8 +47,8 @@ class Machine(object):
         else:
             if self.millis - self._get_time("lcd_c") > 7:
                 self._set_signal("lcd_c", 1)
-                self._set_signal("poll", 1)
                 self._set_current_time("lcd_c")
+                self._te_intr()
 
     def _update_render(self):
         if self._get_signal("poll"):
@@ -48,17 +58,19 @@ class Machine(object):
         if self._get_signal("render") == 1:
             if self.millis - self._get_time("render") > 15:
                 self._set_signal("render", 0)
+                self._set_signal("buffer", 1 - self._get_signal("buffer"))
                 self._set_current_time("render")
 
     # call
     def _te_intr(self):
-        pass
+        self._set_signal("poll", 1)
+        self._set_signal("send", self._get_signal("buffer"))
+        self._set_signal("mipi_busy", 1)
 
     def _frame_done(self):
-        pass
+        self._set_signal("mipi_busy", 0)
 
 
 m = Machine()
 for i in range(100):
     m.update(1)
-    print(m._signals)
