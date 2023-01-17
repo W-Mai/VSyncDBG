@@ -84,7 +84,7 @@ class Machine(object):
                 self._set_signal("poll", 0)
                 self._set_signal("commit_buffer", self._get_signal("render_buffer"))
                 self._set_signal("render_buffer", 1 - self._get_signal("render_buffer"))
-                # self._set_current_time("render")
+
 
 if __name__ == '__main__':
     with StringIO() as f:
