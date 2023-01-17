@@ -64,34 +64,33 @@ class Machine(object):
                 self._frame_done()
                 self._set_current_time("lcd_c")
 
+    # call
+    def _te_intr(self):
+        if self._get_signal("poll") == 0:
+            self._set_signal("poll", 1)
+        self._set_signal("send_buffer", self._get_signal("commit_buffer"))
+
+    def _frame_done(self):
+        pass
+
     def _update_render(self):
         if self._get_signal("poll"):
-            self._set_signal("poll", 0)
             self._set_signal("render", 1)
             self._set_current_time("render")
 
         if self._get_signal("render") == 1:
-            if self.millis - self._get_time("render") > 15:
+            if self.millis - self._get_time("render") > 10:
                 self._set_signal("render", 0)
+                self._set_signal("poll", 0)
                 self._set_signal("commit_buffer", self._get_signal("render_buffer"))
                 self._set_signal("render_buffer", 1 - self._get_signal("render_buffer"))
                 # self._set_current_time("render")
-
-    # call
-    def _te_intr(self):
-        self._set_signal("poll", 1)
-        self._set_signal("send_buffer", self._get_signal("commit_buffer"))
-        self._set_signal("mipi_busy", 1)
-
-    def _frame_done(self):
-        self._set_signal("mipi_busy", 0)
-
 
 if __name__ == '__main__':
     with StringIO() as f:
         m = Machine(f, dump_signals=[
             'lcd_c', 'poll', 'render', 'render_buffer',
-            'commit_buffer', 'send_buffer', 'mipi_busy'
+            'commit_buffer', 'send_buffer'
         ])
         for i in range(200):
             m.update(1)
