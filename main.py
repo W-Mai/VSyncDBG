@@ -15,7 +15,7 @@ class Machine(object):
         print(self.dump_sig())
 
     def dump_sig(self):
-        keys = ['lcd_c', 'poll', 'render', 'buffer', 'send', 'mipi_busy']
+        keys = ['lcd_c', 'poll', 'render', 'render_buffer', 'commit_buffer', 'send_buffer', 'mipi_busy']
         self.fd.write(" ".join(map(str, [
             self._signals.get(key, 0) for key in keys
         ])) + "\n")
@@ -44,16 +44,16 @@ class Machine(object):
         self._signals[key] = val
 
     def _update_lcd_c(self):
-        if self._get_signal("lcd_c") == 1:
-            if self.millis - self._get_time("lcd_c") > 35:
-                self._set_signal("lcd_c", 0)
-                self._frame_done()
-                self._set_current_time("lcd_c")
-        else:
+        if self._get_signal("lcd_c") == 0:
             if self.millis - self._get_time("lcd_c") > 7:
                 self._set_signal("lcd_c", 1)
                 self._set_current_time("lcd_c")
                 self._te_intr()
+        else:
+            if self.millis - self._get_time("lcd_c") > 35:
+                self._set_signal("lcd_c", 0)
+                self._frame_done()
+                self._set_current_time("lcd_c")
 
     def _update_render(self):
         if self._get_signal("poll"):
@@ -64,13 +64,14 @@ class Machine(object):
         if self._get_signal("render") == 1:
             if self.millis - self._get_time("render") > 15:
                 self._set_signal("render", 0)
-                self._set_signal("buffer", 1 - self._get_signal("buffer"))
+                self._set_signal("commit_buffer", self._get_signal("render_buffer"))
+                self._set_signal("render_buffer", 1 - self._get_signal("render_buffer"))
                 # self._set_current_time("render")
 
     # call
     def _te_intr(self):
         self._set_signal("poll", 1)
-        self._set_signal("send", self._get_signal("buffer"))
+        self._set_signal("send_buffer", self._get_signal("commit_buffer"))
         self._set_signal("mipi_busy", 1)
 
     def _frame_done(self):
