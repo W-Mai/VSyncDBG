@@ -25,6 +25,9 @@ class Signal(object):
     def set(self, val):
         return self._machine._set_signal(self._name, val)
 
+    def toggle(self):
+        self.set(0 if self.get() else 1)
+
     def update_time(self):
         self._machine._set_current_time(self._name)
 
@@ -106,7 +109,7 @@ if __name__ == '__main__':
         def updater1(u: Machine):
             a = u.get_signal("a")
             if not a.keeping(3):
-                a.set(1 - a.get())
+                a.toggle()
 
 
         m.add_updater(updater1)

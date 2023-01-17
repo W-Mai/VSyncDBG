@@ -28,7 +28,7 @@ with StringIO() as f:
     def updater1(u: Machine):
         a = u.get_signal("a")
         if not a.keeping(3):
-            a.set(1 - a.get())
+            a.toggle()
 
 
     m.add_updater(updater1)
