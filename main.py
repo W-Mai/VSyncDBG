@@ -74,12 +74,12 @@ class Machine(object):
         pass
 
     def _update_render(self):
-        if self._get_signal("poll"):
+        if self._get_signal("poll") and self._get_signal("render") != 1:
             self._set_signal("render", 1)
             self._set_current_time("render")
 
         if self._get_signal("render") == 1:
-            if self.millis - self._get_time("render") > 10:
+            if self.millis - self._get_time("render") > 43:
                 self._set_signal("render", 0)
                 self._set_signal("poll", 0)
                 self._set_signal("commit_buffer", self._get_signal("render_buffer"))
@@ -92,7 +92,7 @@ if __name__ == '__main__':
             'lcd_c', 'poll', 'render', 'render_buffer',
             'commit_buffer', 'send_buffer'
         ])
-        for i in range(200):
+        for i in range(500):
             m.update(1)
 
         f.seek(0)
