@@ -10,13 +10,11 @@ class Prj(object):
         lcd_c = m.get_signal("lcd_c")
 
         if lcd_c.get() == 0:
-            lcd_c.keep(7)
-            if not lcd_c.keeping():
+            if not lcd_c.keeping(7):
                 lcd_c.set(1)
                 Prj.te_intr(m)
         else:
-            lcd_c.keep(15)
-            if not lcd_c.keeping():
+            if not lcd_c.keeping(15):
                 lcd_c.set(0)
                 Prj.frame_done(m)
 
@@ -32,8 +30,7 @@ class Prj(object):
             render.update_time()
 
         if render.get() == 1:
-            render.keep(43)
-            if not render.keeping():
+            if not render.keeping(43):
                 render.set(0)
                 poll.set(0)
 

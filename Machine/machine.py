@@ -7,10 +7,8 @@ class Signal(object):
         self._machine = machine
         self._keep_time = None
 
-    def keep(self, t):
+    def keeping(self, t):
         self._keep_time = t
-
-    def keeping(self):
         if self._keep_time:
             millis = self._machine.millis
             ct = self._machine._get_time(self._name)
@@ -95,20 +93,26 @@ class Machine(object):
 
 # test only
 if __name__ == '__main__':
+    from io import StringIO
+    from Machine import Machine
+    from draw import draw
+
     with StringIO() as f:
         m = Machine(f, dump_signals=[
-            'a', 'b'
+            'a'
         ])
 
 
         def updater1(u: Machine):
-            s1 = u.get_signal("a")
-            s1.keep(3)
-            print(s1.get(), s1.keeping())
-            s1.set(1)
+            a = u.get_signal("a")
+            if not a.keeping(3):
+                a.set(1 - a.get())
 
 
         m.add_updater(updater1)
 
-        for i in range(10):
+        for i in range(21):
             m.update(1)
+
+        f.seek(0)
+        draw(f)

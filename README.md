@@ -27,8 +27,7 @@ with StringIO() as f:
 
     def updater1(u: Machine):
         a = u.get_signal("a")
-        a.keep(3)
-        if not a.keeping():
+        if not a.keeping(3):
             a.set(1 - a.get())
 
 
