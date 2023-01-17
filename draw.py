@@ -1,21 +1,22 @@
+from io import StringIO
+
 from matplotlib import pyplot as plt
 import numpy as np
 
-SEP = True
 
-with open("log") as f:
+def draw(f: StringIO):
     lines = list(map(lambda x0: x0.split(), f.readlines()))
-    arr = np.array(lines, dtype="int32")
+    labels = lines[0]
+    arr = np.array(lines[1:], dtype="int32")
     size, row = arr.shape
 
-x = np.arange(size)
+    x = np.arange(size)
 
-fig, ax = plt.subplots(nrows=row if SEP else 1)
+    fig, ax = plt.subplots()
+    ax.get_yaxis().set_visible(False)
 
-for i in range(row):
-    if SEP:
-        ax[i].step(x, arr[:, i], linewidth=2.5)
-    else:
-        ax.step(x, arr[:, i] + 1.1 * i, linewidth=2.5)
+    for i in range(row):
+        ax.step(x, arr[:, i] - 1.1 * i, linewidth=2.5, label=labels[i])
 
-plt.show()
+    plt.legend(title='Parameter where:')
+    plt.show()

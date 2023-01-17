@@ -1,8 +1,13 @@
 # VSyncDBG
-VSyncDBG
+
+# Install Requirements
+
+```shell
+pip3 install -r requirements.txt
+```
 
 # Run
-```bash
-pip3 install -r requirements.txt
+
+```shell
 python3 main.py
 ```

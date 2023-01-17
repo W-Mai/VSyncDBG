@@ -1,10 +1,17 @@
+from io import StringIO
+
+from draw import draw
+
+
 class Machine(object):
-    def __init__(self, fd):
+    def __init__(self, fd, dump_signals):
         self.millis = 0.0
         self._timestamps = {}
         self._signals = {}
+        self._dump_signals = dump_signals
 
         self.fd = fd
+        self.dump_sig_header()
 
     def update(self, delta: float):
         self.millis += delta
@@ -14,14 +21,16 @@ class Machine(object):
         self._update_render()
         print(self.dump_sig())
 
+    def dump_sig_header(self):
+        self.fd.write(" ".join(self._dump_signals) + "\n")
+
     def dump_sig(self):
-        keys = ['lcd_c', 'poll', 'render', 'render_buffer', 'commit_buffer', 'send_buffer', 'mipi_busy']
         self.fd.write(" ".join(map(str, [
-            self._signals.get(key, 0) for key in keys
+            self._signals.get(key, 0) for key in self._dump_signals
         ])) + "\n")
 
         return {
-            key: self._signals.get(key, 0) for key in keys
+            key: self._signals.get(key, 0) for key in self._dump_signals
         }
 
     def _get_time(self, key):
@@ -78,9 +87,14 @@ class Machine(object):
         self._set_signal("mipi_busy", 0)
 
 
-with open("log", "w") as f:
-    m = Machine(f)
-    for i in range(200):
-        m.update(1)
+if __name__ == '__main__':
+    with StringIO() as f:
+        m = Machine(f, dump_signals=[
+            'lcd_c', 'poll', 'render', 'render_buffer',
+            'commit_buffer', 'send_buffer', 'mipi_busy'
+        ])
+        for i in range(200):
+            m.update(1)
 
-import draw
+        f.seek(0)
+        draw(f)
