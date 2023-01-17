@@ -13,13 +13,11 @@ class Prj(object):
             lcd_c.keep(7)
             if not lcd_c.keeping():
                 lcd_c.set(1)
-                lcd_c.update_time()
                 Prj.te_intr(m)
         else:
             lcd_c.keep(15)
             if not lcd_c.keeping():
                 lcd_c.set(0)
-                lcd_c.update_time()
                 Prj.frame_done(m)
 
     @staticmethod

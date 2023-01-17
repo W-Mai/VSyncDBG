@@ -14,8 +14,9 @@ class Signal(object):
         if self._keep_time:
             millis = self._machine.millis
             ct = self._machine._get_time(self._name)
-            if millis > ct + self._keep_time:
+            if millis >= ct + self._keep_time:
                 self._keep_time = None
+                self.update_time()
             else:
                 return True
         return False
@@ -43,11 +44,11 @@ class Machine(object):
         self._dump_sig_header()
 
     def update(self, delta: float):
-        self.millis += delta
-
         for up in self._updaters:
             up(self)
             self.dump_sig()
+
+        self.millis += delta
 
     def _dump_sig_header(self):
         self.fd.write(" ".join(self._dump_signals) + "\n")
