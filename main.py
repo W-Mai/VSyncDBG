@@ -77,7 +77,7 @@ class Machine(object):
         self._set_signal("mipi_busy", 0)
 
 
-with open("log2", "w") as f:
+with open("log", "w") as f:
     m = Machine(f)
     for i in range(200):
         m.update(1)
