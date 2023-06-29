@@ -11,7 +11,7 @@ class Prj(object):
     def on_init(m: Machine):
         pollready = m.get_signal("pollready")
         pollmon = m.get_signal("pollmon")
-        
+
         if not Prj.INITED:
             pollready.set(1)
             pollmon.set(1)
@@ -26,7 +26,7 @@ class Prj(object):
             if not lcd.keeping(7):
                 lcd.set(1)
                 Prj.te_intr(m)
-                    
+
         else:
             if not lcd.keeping(8):
                 if send_buffer.get():
@@ -44,15 +44,15 @@ class Prj(object):
         if pollmon.get() and pollready.get() and render.get() != 1:
             pollmon.set(0)
             render.set(1)
-            Prj.check_crruption(m)
+            Prj.check_corruption(m)
             render.update_time()
 
         if render.get() == 1:
             rnd = randrange(2, 100)
             # rnd = 20
             if not render.keeping(rnd):
-                Prj.check_crruption(m)
-                
+                Prj.check_corruption(m)
+
                 commit_buffer.set(render_buffer.get())
                 render_buffer.set(1 - render_buffer.get())
                 render.set(0)
@@ -61,7 +61,7 @@ class Prj(object):
     @staticmethod
     def te_intr(m: Machine):
         commit_buffer = m.get_signal("commit_buffer")
-        if(commit_buffer.get()):
+        if (commit_buffer.get()):
             Prj.frame_start(m)
 
     @staticmethod
@@ -69,28 +69,29 @@ class Prj(object):
         send_buffer = m.get_signal("send_buffer")
         commit_buffer = m.get_signal("commit_buffer")
 
-        send_buffer.set(commit_buffer)
-        Prj.check_crruption(m)
+        send_buffer.set(commit_buffer.get())
+        Prj.check_corruption(m)
 
     @staticmethod
     def frame_done(m: Machine):
         pollready = m.get_signal("pollready")
         send_buffer = m.get_signal("send_buffer")
-        Prj.check_crruption(m)
+        Prj.check_corruption(m)
         pollready.set(1)
         send_buffer.set(-1)
 
     @staticmethod
-    def check_crruption(m: Machine):
+    def check_corruption(m: Machine):
         send_buffer = m.get_signal("send_buffer")
         render_buffer = m.get_signal("render_buffer")
-        crruption = m.get_signal("crruption")
+        corruption = m.get_signal("corruption")
         render = m.get_signal("render")
         lcd = m.get_signal("lcd")
 
         if render.get() and lcd.get() and send_buffer.get() == render_buffer.get():
-            crruption.set(crruption.get() + 1)
-            print("crruption detected!")
+            corruption.set(corruption.get() + 1)
+            print("corruption detected!")
+
 
 if __name__ == '__main__':
     with StringIO() as f:
