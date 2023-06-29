@@ -12,13 +12,13 @@ class Prj(object):
     def update_lcd_c(m: Machine):
         lcd_c = m.get_signal("lcd_c")
 
-        if lcd_c.get() == 0:
+        if lcd_c() == 0:
             if not lcd_c.keeping(7):
-                lcd_c.set(1)
+                lcd_c(1)
                 Prj.te_intr(m)
         else:
             if not lcd_c.keeping(8):
-                lcd_c.set(0)
+                lcd_c(0)
                 Prj.frame_done(m)
 
     @staticmethod
@@ -27,32 +27,32 @@ class Prj(object):
         render = m.get_signal("render")
         render_buffer = m.get_signal("render_buffer")
 
-        if poll.get() and render.get() != 1:
-            render.set(1)
+        if poll() and render() != 1:
+            render(1)
             Prj.check_collision(m)
             render.update_time()
 
-        if render.get() == 1:
-            # rnd = randrange(10, 15)
-            rnd = 20
+        if render() == 1:
+            rnd = randrange(2, 100)
+            # rnd = 20
             if not render.keeping(rnd):
                 Prj.check_collision(m)
-                render.set(0)
-                poll.set(poll.get() - 1)
+                render(0)
+                poll(poll() - 1)
 
-                Prj.VSYNC_QUEUE.append(render_buffer.get())
-                render_buffer.set(1 - render_buffer.get())
+                Prj.VSYNC_QUEUE.append(render_buffer())
+                render_buffer(1 - render_buffer())
 
     @staticmethod
     def te_intr(m: Machine):
         poll = m.get_signal("poll")
         send_buffer = m.get_signal("send_buffer")
 
-        poll.set(poll.get() + 1
-                 if poll.get() < Prj.POLL_LIMIT
+        poll(poll() + 1
+                 if poll() < Prj.POLL_LIMIT
                  else Prj.POLL_LIMIT)
 
-        send_buffer.set(Prj.VSYNC_QUEUE.pop() if Prj.VSYNC_QUEUE else - 1)
+        send_buffer(Prj.VSYNC_QUEUE.pop(0) if Prj.VSYNC_QUEUE else - 1)
         Prj.check_collision(m)
 
     @staticmethod
@@ -64,7 +64,7 @@ class Prj(object):
         send_buffer = m.get_signal("send_buffer")
         render_buffer = m.get_signal("render_buffer")
 
-        if send_buffer.get() == render_buffer.get():
+        if send_buffer() == render_buffer():
             print("Collision detected!")
 
 

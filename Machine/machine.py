@@ -19,6 +19,11 @@ class Signal(object):
                 return True
         return False
 
+    def __call__(self, *args, **kwargs):
+        if args:
+            return self.set(args[0])
+        return self.get()
+
     def get(self):
         return self._machine._get_signal(self._name)
 
