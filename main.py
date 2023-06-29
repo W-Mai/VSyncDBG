@@ -10,7 +10,7 @@ class Prj(object):
 
     @staticmethod
     def update_lcd_c(m: Machine):
-        lcd_c = m.get_signal("lcd_c")
+        lcd_c = m.s.lcd_c
 
         if lcd_c() == 0:
             if not lcd_c.keeping(7):
@@ -23,9 +23,7 @@ class Prj(object):
 
     @staticmethod
     def update_render(m: Machine):
-        poll = m.get_signal("poll")
-        render = m.get_signal("render")
-        render_buffer = m.get_signal("render_buffer")
+        poll, render, render_buffer = m.s.poll, m.s.render, m.s.render_buffer
 
         if poll() and render() != 1:
             render(1)
@@ -45,12 +43,11 @@ class Prj(object):
 
     @staticmethod
     def te_intr(m: Machine):
-        poll = m.get_signal("poll")
-        send_buffer = m.get_signal("send_buffer")
+        send_buffer, poll = m.s.send_buffer, m.s.poll
 
         poll(poll() + 1
-                 if poll() < Prj.POLL_LIMIT
-                 else Prj.POLL_LIMIT)
+             if poll() < Prj.POLL_LIMIT
+             else Prj.POLL_LIMIT)
 
         send_buffer(Prj.VSYNC_QUEUE.pop(0) if Prj.VSYNC_QUEUE else - 1)
         Prj.check_collision(m)
@@ -61,8 +58,7 @@ class Prj(object):
 
     @staticmethod
     def check_collision(m: Machine):
-        send_buffer = m.get_signal("send_buffer")
-        render_buffer = m.get_signal("render_buffer")
+        send_buffer, render_buffer = m.s.send_buffer, m.s.render_buffer
 
         if send_buffer() == render_buffer():
             print("Collision detected!")

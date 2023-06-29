@@ -37,6 +37,20 @@ class Signal(object):
         self._machine._set_current_time(self._name)
 
 
+class SignalWrapper(object):
+    def __init__(self, machine: 'Machine'):
+        self._machine = machine
+
+    def __getattr__(self, name):
+        return self._machine.get_signal(name)
+
+    def __dict__(self):
+        return self._machine._signals_obj
+
+    def __dir__(self):
+        return list(self.__dict__().keys()) + dir(type(self)) + ["fuck"]
+
+
 class Machine(object):
     def __init__(self, fd, dump_signals, tick_per_mil):
         self.millis = 0.0
@@ -46,6 +60,8 @@ class Machine(object):
         self._dump_signals = dump_signals
         self._updaters = []
         self._tick_per_mil = tick_per_mil
+
+        self.s = SignalWrapper(self)
 
         self.fd = fd
 
