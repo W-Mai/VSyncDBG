@@ -4,55 +4,57 @@ from draw import draw
 from random import randrange
 
 
-class Prj(object):
+class Prj(Project):
     INITED = False
     VSYNC_QUEUE_LEN = 2
     VSYNC_QUEUE = []
 
-    @staticmethod
-    def on_init(m: Machine):
-        pollmon = m.get_signal("pollmon")
-        send_buffer = m.get_signal("send_buffer")
+    pollmon = Signal(1)
+    lcd = Signal(0)
+    render = Signal(0)
+    render_buffer = Signal(0)
+    send_buffer = Signal(-1)
+    corruption = Signal(0)
+    queue_len = Signal(0)
 
-        if not Prj.INITED:
-            pollmon.set(1)
-            send_buffer.set(-1)
-            Prj.INITED = True
+    @Init
+    def init(self):
+        print("Simulation started!")
 
-    @staticmethod
-    def update_lcd(m: Machine):
-        lcd = m.get_signal("lcd")
-        send_buffer = m.get_signal("send_buffer")
+    @Updater
+    def update_lcd(self):
+        lcd = self.s.lcd
+        send_buffer = self.s.send_buffer
 
         if lcd.get() == 0:
             if not lcd.keeping(8):
                 lcd.set(1)
-                Prj.te_intr(m)
+                Prj.te_intr()
 
         else:
             if not lcd.keeping(8):
                 if send_buffer.get() > -1:
-                    Prj.frame_done(m)
+                    Prj.frame_done()
                 lcd.set(0)
-    
-    @staticmethod
-    def get_writeable(m: Machine):
+
+    @Passive
+    def get_writeable(self):
         return len(Prj.VSYNC_QUEUE) < Prj.VSYNC_QUEUE_LEN
-    
-    @staticmethod
-    def get_readable(m: Machine):
+
+    @Passive
+    def get_readable(self):
         return len(Prj.VSYNC_QUEUE) > 0
 
-    @staticmethod
-    def update_render(m: Machine):
-        pollmon = m.get_signal("pollmon")
-        render = m.get_signal("render")
-        render_buffer = m.get_signal("render_buffer")
+    @Updater
+    def update_render(self):
+        pollmon = self.s.pollmon
+        render = self.s.render
+        render_buffer = self.s.render_buffer
 
-        if pollmon.get() and Prj.get_writeable(m) and render.get() != 1:
+        if pollmon.get() and Prj.get_writeable() and render.get() != 1:
             pollmon.set(0)
             render.set(1)
-            Prj.check_corruption(m)
+            Prj.check_corruption()
             render.update_time()
 
         if render.get() == 0:
@@ -64,37 +66,37 @@ class Prj(object):
             render_time = randrange(2, 100)
             # render_time = 50
             if not render.keeping(render_time):
-                Prj.check_corruption(m)
+                Prj.check_corruption()
                 Prj.VSYNC_QUEUE.append(render_buffer.get())
                 render_buffer.set(1 - render_buffer.get())
                 render.set(0)
-                
-    @staticmethod
-    def te_intr(m: Machine):
-        if (Prj.get_readable(m)):
-            Prj.frame_start(m)
 
-    @staticmethod
-    def frame_start(m: Machine):
-        send_buffer = m.get_signal("send_buffer")
+    @Passive
+    def te_intr(self):
+        if (Prj.get_readable()):
+            Prj.frame_start()
+
+    @Passive
+    def frame_start(self):
+        send_buffer = self.s.send_buffer
         send_buffer.set(Prj.VSYNC_QUEUE[0])
-        Prj.check_corruption(m)
+        Prj.check_corruption()
 
-    @staticmethod
-    def frame_done(m: Machine):
-        send_buffer = m.get_signal("send_buffer")
-        Prj.check_corruption(m)
+    @Passive
+    def frame_done(self):
+        send_buffer = self.s.send_buffer
+        Prj.check_corruption()
         Prj.VSYNC_QUEUE.pop(0)
         send_buffer.set(-1)
 
-    @staticmethod
-    def check_corruption(m: Machine):
-        send_buffer = m.get_signal("send_buffer")
-        render_buffer = m.get_signal("render_buffer")
-        corruption = m.get_signal("corruption")
-        render = m.get_signal("render")
-        lcd = m.get_signal("lcd")
-        queue_len = m.get_signal("queue_len")
+    @Passive
+    def check_corruption(self):
+        send_buffer = self.s.send_buffer
+        render_buffer = self.s.render_buffer
+        corruption = self.s.corruption
+        render = self.s.render
+        lcd = self.s.lcd
+        queue_len = self.s.queue_len
 
         queue_len.set(len(Prj.VSYNC_QUEUE) - 1)
 
@@ -105,23 +107,6 @@ class Prj(object):
 
 if __name__ == '__main__':
     with StringIO() as f:
-        machine = Machine(f, dump_signals=[
-            'pollmon',
-            'lcd',
-            'render',
-            'render_buffer',
-            'send_buffer',
-            'corruption',
-            'queue_len'
-        ], tick_per_mil=1)
-
-        machine.add_updater(Prj.on_init)
-        machine.add_updater(Prj.update_lcd)
-        machine.add_updater(Prj.update_render)
-
-        for i in range(int(machine.calc_sim_time(1000))):
-            machine.update(machine.get_mil_per_tick())
-
-        f.seek(0)
+        Prj.run(1, 1000, f)
 
         draw(f)
