@@ -107,6 +107,6 @@ class Prj(Project):
 
 if __name__ == '__main__':
     with StringIO() as f:
-        Prj.run(1, 1000, f)
+        Prj.run(30, 200, f)
 
         draw(f)

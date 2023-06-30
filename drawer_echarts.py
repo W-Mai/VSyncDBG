@@ -13,14 +13,13 @@ def draw(f: StringIO):
     labels = next(lines).split()
 
     lines = map(lambda x0: x0.split(), lines)
-
     arr = np.array(list(lines), dtype="int32")
     size, row = arr.shape
 
     signal_graphs = [
         (
             Line()
-            .add_xaxis(list(range(int(size / tick_per_mil / updaters))))
+            .add_xaxis(range(int(size)))
             .add_yaxis(
                 labels[i],
                 arr[:, i].flatten().tolist(),
@@ -29,18 +28,23 @@ def draw(f: StringIO):
                 linestyle_opts=opts.LineStyleOpts(width=3),
             )
             .set_global_opts(
-                yaxis_opts=opts.AxisOpts(
-                    interval=1,
-                    grid_index=i,
-                ),
                 xaxis_opts=opts.AxisOpts(
-                    interval=1,
-                    grid_index=i,
+                    name=f"{tick_per_mil} ticks / mil",
                     type_="category",
                     boundary_gap=True,
-                    axisline_opts=opts.AxisLineOpts(is_on_zero=True),
+                    axisline_opts=opts.AxisLineOpts(is_on_zero=False, is_show=False),
+                ),
+                yaxis_opts=opts.AxisOpts(
+                    interval=1,
                 ),
                 datazoom_opts=[
+                    opts.DataZoomOpts(
+                        is_realtime=True,
+                        type_="inside",
+                        range_start=0,
+                        range_end=int(size / tick_per_mil / updaters),
+                        xaxis_index=list(range(row)),
+                    ),
                     opts.DataZoomOpts(
                         is_realtime=True,
                         type_="slider",
@@ -61,7 +65,7 @@ def draw(f: StringIO):
             chart=signal_graphs[i],
             grid_opts=opts.GridOpts(
                 pos_top=f"{int(100 / row * i * 0.8) + 5}%",
-                height=f"{100 / row * 0.6}%",
+                height=f"{int(100 / row * 0.6)}%",
                 is_contain_label=True,
                 is_show=False,
             )
