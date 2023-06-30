@@ -57,7 +57,7 @@ class Prj(Project):
                 poll(poll() - 1)
 
                 Prj.VSYNC_QUEUE.append(render_buffer())
-                render_buffer(1 - render_buffer())
+                render_buffer(render_buffer)
 
     @Passive
     def te_intr(self):

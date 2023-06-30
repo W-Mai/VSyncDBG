@@ -112,6 +112,11 @@ class Machine(object):
         return self._signals[key]
 
     def _set_signal(self, key, val):
+        pre_val = self._signals.get(key, None)
+        if pre_val == val:
+            return
+        elif pre_val is not None and type(val) is not type(pre_val):
+            raise Exception(f"Type of {key} is not matched")
         self._signals[key] = val
 
     # Public Functions
@@ -223,6 +228,7 @@ class Project(object, metaclass=ProjectMeta):
         for 無駄 in range(int(cls._machine.calc_sim_time(lasted_time))):
             # invoke update before cbs
             [cb() for cb in cls._machine._on_update_before]
+            # invoke update
             cls._machine.update(cls._machine.get_mil_per_tick())
             # invoke update after cbs
             [cb() for cb in cls._machine._on_update_after]
