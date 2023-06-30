@@ -1,64 +1,70 @@
 from io import StringIO
-from Machine import Machine
+from Machine import Project, Signal, Updater
 from draw import draw
 from random import randrange
 
 
-class Prj(object):
+class Prj(Project):
     POLL_LIMIT = 1
     VSYNC_QUEUE = []
 
-    @staticmethod
-    def update_lcd_c(m: Machine):
-        lcd_c = m.s.lcd_c
+    poll = Signal(1)
+    lcd_c = Signal(0)
+    render = Signal(0)
+    render_buffer = Signal(0)
+    send_buffer = Signal(0)
+
+    @Updater
+    def update_lcd_c(self):
+        lcd_c = self.s.lcd_c
 
         if lcd_c() == 0:
             if not lcd_c.keeping(7):
                 lcd_c(1)
-                Prj.te_intr(m)
+                Prj.te_intr()
         else:
             if not lcd_c.keeping(8):
                 lcd_c(0)
-                Prj.frame_done(m)
+                Prj.frame_done()
 
-    @staticmethod
-    def update_render(m: Machine):
-        poll, render, render_buffer = m.s.poll, m.s.render, m.s.render_buffer
+    @Updater
+    def update_render(self):
+        poll, render, render_buffer = self.s.poll, self.s.render, self.s.render_buffer
 
         if poll() and render() != 1:
             render(1)
-            Prj.check_collision(m)
+            Prj.check_collision()
             render.update_time()
 
         if render() == 1:
             rnd = randrange(2, 100)
             # rnd = 20
             if not render.keeping(rnd):
-                Prj.check_collision(m)
+                Prj.check_collision()
                 render(0)
                 poll(poll() - 1)
 
                 Prj.VSYNC_QUEUE.append(render_buffer())
                 render_buffer(1 - render_buffer())
 
-    @staticmethod
-    def te_intr(m: Machine):
-        send_buffer, poll = m.s.send_buffer, m.s.poll
+    @classmethod
+    def te_intr(cls):
+        send_buffer, poll = cls.s.send_buffer, cls.s.poll
 
         poll(poll() + 1
              if poll() < Prj.POLL_LIMIT
              else Prj.POLL_LIMIT)
 
         send_buffer(Prj.VSYNC_QUEUE.pop(0) if Prj.VSYNC_QUEUE else - 1)
-        Prj.check_collision(m)
+        Prj.check_collision()
 
-    @staticmethod
-    def frame_done(m: Machine):
-        Prj.check_collision(m)
+    @classmethod
+    def frame_done(cls):
+        Prj.check_collision()
 
-    @staticmethod
-    def check_collision(m: Machine):
-        send_buffer, render_buffer = m.s.send_buffer, m.s.render_buffer
+    @classmethod
+    def check_collision(cls):
+        send_buffer, render_buffer = cls.s.send_buffer, cls.s.render_buffer
 
         if send_buffer() == render_buffer():
             print("Collision detected!")
@@ -66,20 +72,5 @@ class Prj(object):
 
 if __name__ == '__main__':
     with StringIO() as f:
-        machine = Machine(f, dump_signals=[
-            'poll',
-            'lcd_c',
-            'render',
-            'render_buffer',
-            'send_buffer'
-        ], tick_per_mil=1)
-
-        machine.add_updater(Prj.update_lcd_c)
-        machine.add_updater(Prj.update_render)
-
-        for i in range(int(machine.calc_sim_time(400))):
-            machine.update(machine.get_mil_per_tick())
-
-        f.seek(0)
-
+        Prj.run(1, 400, f)
         draw(f)
