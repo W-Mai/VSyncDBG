@@ -1,5 +1,5 @@
 from io import StringIO
-from Machine import Project, Signal, Updater, Passive
+from Machine import Project, Signal, Updater, Passive, Init
 from draw import draw
 from random import randrange
 
@@ -13,6 +13,10 @@ class Prj(Project):
     render = Signal(0)
     render_buffer = Signal(0)
     send_buffer = Signal(0)
+
+    @Init
+    def init(self):
+        print("Initialized!")
 
     @Updater
     def update_lcd_c(self):

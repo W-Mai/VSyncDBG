@@ -150,6 +150,10 @@ class Passive(Updater):
     pass
 
 
+class Init(Updater):
+    pass
+
+
 class ProjectMeta(type):
     def __new__(mcs, name, bases, attrs):
         dump_signals = []
@@ -175,6 +179,9 @@ class ProjectMeta(type):
                 machine.add_updater(val)
             elif type(val) is Passive:
                 val.set_project(obj)
+            elif type(val) is Init:
+                val.set_project(obj)
+                val()
         return obj
 
 
