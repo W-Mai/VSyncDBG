@@ -71,7 +71,7 @@ class Machine(object):
 
     def update(self, delta: float):
         for up in self._updaters:
-            up(self)
+            up()
             self.dump_sig()
 
         self.millis += delta
@@ -134,7 +134,7 @@ class Updater(object):
         self.updater = updater
         self.project = None
 
-    def __call__(self, machine):
+    def __call__(self):
         # machine: not use
         return self.updater(self.project)
 
@@ -144,6 +144,10 @@ class Updater(object):
     @property
     def is_updater(self):
         return True
+
+
+class Passive(Updater):
+    pass
 
 
 class ProjectMeta(type):
@@ -166,10 +170,11 @@ class ProjectMeta(type):
         obj = super().__new__(mcs, name, bases, new_attrs)
 
         for key, val in new_attrs.items():
-            if isinstance(val, Updater):
+            if type(val) is Updater:
                 val.set_project(obj)
                 machine.add_updater(val)
-
+            elif type(val) is Passive:
+                val.set_project(obj)
         return obj
 
 

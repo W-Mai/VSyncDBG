@@ -1,5 +1,5 @@
 from io import StringIO
-from Machine import Project, Signal, Updater
+from Machine import Project, Signal, Updater, Passive
 from draw import draw
 from random import randrange
 
@@ -47,9 +47,9 @@ class Prj(Project):
                 Prj.VSYNC_QUEUE.append(render_buffer())
                 render_buffer(1 - render_buffer())
 
-    @classmethod
-    def te_intr(cls):
-        send_buffer, poll = cls.s.send_buffer, cls.s.poll
+    @Passive
+    def te_intr(self):
+        send_buffer, poll = self.s.send_buffer, self.s.poll
 
         poll(poll() + 1
              if poll() < Prj.POLL_LIMIT
@@ -58,13 +58,13 @@ class Prj(Project):
         send_buffer(Prj.VSYNC_QUEUE.pop(0) if Prj.VSYNC_QUEUE else - 1)
         Prj.check_collision()
 
-    @classmethod
-    def frame_done(cls):
+    @Passive
+    def frame_done(self):
         Prj.check_collision()
 
-    @classmethod
-    def check_collision(cls):
-        send_buffer, render_buffer = cls.s.send_buffer, cls.s.render_buffer
+    @Passive
+    def check_collision(self):
+        send_buffer, render_buffer = self.s.send_buffer, self.s.render_buffer
 
         if send_buffer() == render_buffer():
             print("Collision detected!")
