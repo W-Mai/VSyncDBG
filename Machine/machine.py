@@ -63,6 +63,11 @@ class Machine(object):
 
         self.s = SignalsWrapper(self)
 
+        # call backs
+        self._on_init = []
+        self._on_update_before = []
+        self._on_update_after = []
+
     def calc_sim_time(self, t):
         return t * self._tick_per_mil
 
@@ -154,6 +159,15 @@ class Init(Updater):
     pass
 
 
+class UpdateBefore(Updater):
+    pass
+
+
+class UpdateAfter(Updater):
+    pass
+
+
+# noinspection PyProtectedMember
 class ProjectMeta(type):
     def __new__(mcs, name, bases, attrs):
         dump_signals = []
@@ -181,7 +195,14 @@ class ProjectMeta(type):
                 val.set_project(obj)
             elif type(val) is Init:
                 val.set_project(obj)
-                val()
+                machine._on_init.append(val)
+            elif type(val) is UpdateBefore:
+                val.set_project(obj)
+                machine._on_update_before.append(val)
+            elif type(val) is UpdateAfter:
+                val.set_project(obj)
+                machine._on_update_after.append(val)
+
         return obj
 
 
@@ -196,8 +217,15 @@ class Project(object, metaclass=ProjectMeta):
         cls._machine.fd = fd
 
         cls._machine._dump_sig_header()
+
+        # invoke init cbs
+        [cb() for cb in cls._machine._on_init]
         for 無駄 in range(int(cls._machine.calc_sim_time(lasted_time))):
+            # invoke update before cbs
+            [cb() for cb in cls._machine._on_update_before]
             cls._machine.update(cls._machine.get_mil_per_tick())
+            # invoke update after cbs
+            [cb() for cb in cls._machine._on_update_after]
 
         fd.seek(0)
 
