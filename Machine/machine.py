@@ -160,16 +160,15 @@ class Passive(Updater):
     pass
 
 
-class Init(Updater):
-    pass
+class Event(object):
+    class Init(Updater):
+        pass
 
+    class UpdateBefore(Updater):
+        pass
 
-class UpdateBefore(Updater):
-    pass
-
-
-class UpdateAfter(Updater):
-    pass
+    class UpdateAfter(Updater):
+        pass
 
 
 # noinspection PyProtectedMember
@@ -198,13 +197,13 @@ class ProjectMeta(type):
                 machine.add_updater(val)
             elif type(val) is Passive:
                 val.set_project(obj)
-            elif type(val) is Init:
+            elif type(val) is Event.Init:
                 val.set_project(obj)
                 machine._on_init.append(val)
-            elif type(val) is UpdateBefore:
+            elif type(val) is Event.UpdateBefore:
                 val.set_project(obj)
                 machine._on_update_before.append(val)
-            elif type(val) is UpdateAfter:
+            elif type(val) is Event.UpdateAfter:
                 val.set_project(obj)
                 machine._on_update_after.append(val)
 

@@ -1,5 +1,5 @@
 from io import StringIO
-from Machine import Project, Signal, Updater, Passive, Init, UpdateBefore, UpdateAfter
+from Machine import Project, Signal, Updater, Passive, Event
 from draw import draw
 from random import randrange
 
@@ -17,7 +17,7 @@ class Prj(Project):
     corruption = Signal(0)
     queue_len = Signal(0)
 
-    @Init
+    @Event.Init
     def init(self):
         print("Simulation started!")
 
