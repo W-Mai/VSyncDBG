@@ -16,27 +16,27 @@ python3 main.py
 
 ```python
 from io import StringIO
-from Machine import Machine
+from Machine import Project, Signal, Updater
 from draw import draw
 
-with StringIO() as f:
-    m = Machine(f, dump_signals=[
-        'a'
-    ], tick_per_mil=1000)
 
+class Prj(Project):
+    a = Signal(0)
+    b = Signal(1)
 
-    def updater1(u: Machine):
-        a = u.get_signal("a")
+    @Updater
+    def updater(self):
+        a = self.s.a
+        b = self.s.b
+
         if not a.keeping(3):
             a.toggle()
+        if not b.keeping(1.5):
+            b.toggle()
 
 
-    m.add_updater(updater1)
-
-    for i in range(int(m.calc_sim_time(21))):
-        m.update(m.get_mil_per_tick())
-
-    f.seek(0)
+with StringIO() as f:
+    Prj.run(1000, 21, f)
     draw(f)
 ```
 
