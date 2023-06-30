@@ -1,3 +1,4 @@
+# noinspection PyProtectedMember
 class _Signal(object):
     def __init__(self, machine: 'Machine', name: str):
         self._name = name
@@ -34,6 +35,7 @@ class _Signal(object):
         self._machine._set_current_time(self._name)
 
 
+# noinspection PyProtectedMember
 class SignalsWrapper(object):
     def __init__(self, machine: 'Machine'):
         self._machine = machine
