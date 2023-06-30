@@ -1,6 +1,6 @@
 from io import StringIO
 from Machine import Project, Signal, Updater, Passive, Event
-from draw import draw
+from drawer_echarts import draw
 from random import randrange
 
 
