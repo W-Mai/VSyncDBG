@@ -1,6 +1,3 @@
-from io import StringIO
-
-
 class _Signal(object):
     def __init__(self, machine: 'Machine', name: str):
         self._name = name
@@ -174,6 +171,7 @@ class ProjectMeta(type):
         return obj
 
 
+# noinspection PyProtectedMember
 class Project(object, metaclass=ProjectMeta):
     s = None
     _machine = None
@@ -184,32 +182,33 @@ class Project(object, metaclass=ProjectMeta):
         cls._machine.fd = fd
 
         cls._machine._dump_sig_header()
-        for 没用 in range(int(cls._machine.calc_sim_time(lasted_time))):
+        for 無駄 in range(int(cls._machine.calc_sim_time(lasted_time))):
             cls._machine.update(cls._machine.get_mil_per_tick())
+
+        fd.seek(0)
 
 
 # test only
 if __name__ == '__main__':
     from io import StringIO
-    from Machine import Machine
     from draw import draw
 
-    with StringIO() as f:
-        m = Machine(f, dump_signals=[
-            'a'
-        ], tick_per_mil=1000)
 
+    class Prj(Project):
+        a = Signal(0)
+        b = Signal(1)
 
-        def updater1(u: Machine):
-            a = u.get_signal("a")
+        @Updater
+        def updater(self):
+            a = self.s.a
+            b = self.s.b
+
             if not a.keeping(3):
                 a.toggle()
+            if not b.keeping(1.5):
+                b.toggle()
 
 
-        m.add_updater(updater1)
-
-        for i in range(int(m.calc_sim_time(21))):
-            m.update(m.get_mil_per_tick())
-
-        f.seek(0)
+    with StringIO() as f:
+        Prj.run(1000, 21, f)
         draw(f)
