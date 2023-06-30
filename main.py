@@ -29,21 +29,21 @@ class Prj(Project):
         if lcd.get() == 0:
             if not lcd.keeping(8):
                 lcd.set(1)
-                Prj.te_intr()
+                self.te_intr()
 
         else:
             if not lcd.keeping(8):
                 if send_buffer.get() > -1:
-                    Prj.frame_done()
+                    self.frame_done()
                 lcd.set(0)
 
     @Passive
     def get_writeable(self):
-        return len(Prj.VSYNC_QUEUE) < Prj.VSYNC_QUEUE_LEN
+        return len(self.VSYNC_QUEUE) < self.VSYNC_QUEUE_LEN
 
     @Passive
     def get_readable(self):
-        return len(Prj.VSYNC_QUEUE) > 0
+        return len(self.VSYNC_QUEUE) > 0
 
     @Updater
     def update_render(self):
@@ -51,10 +51,10 @@ class Prj(Project):
         render = self.s.render
         render_buffer = self.s.render_buffer
 
-        if pollmon.get() and Prj.get_writeable() and render.get() != 1:
+        if pollmon.get() and self.get_writeable() and render.get() != 1:
             pollmon.set(0)
             render.set(1)
-            Prj.check_corruption()
+            self.check_corruption()
             render.update_time()
 
         if render.get() == 0:
@@ -66,27 +66,27 @@ class Prj(Project):
             render_time = randrange(2, 100)
             # render_time = 50
             if not render.keeping(render_time):
-                Prj.check_corruption()
-                Prj.VSYNC_QUEUE.append(render_buffer.get())
+                self.check_corruption()
+                self.VSYNC_QUEUE.append(render_buffer.get())
                 render_buffer.set(1 - render_buffer.get())
                 render.set(0)
 
     @Passive
     def te_intr(self):
-        if (Prj.get_readable()):
-            Prj.frame_start()
+        if self.get_readable():
+            self.frame_start()
 
     @Passive
     def frame_start(self):
         send_buffer = self.s.send_buffer
-        send_buffer.set(Prj.VSYNC_QUEUE[0])
-        Prj.check_corruption()
+        send_buffer.set(self.VSYNC_QUEUE[0])
+        self.check_corruption()
 
     @Passive
     def frame_done(self):
         send_buffer = self.s.send_buffer
-        Prj.check_corruption()
-        Prj.VSYNC_QUEUE.pop(0)
+        self.check_corruption()
+        self.VSYNC_QUEUE.pop(0)
         send_buffer.set(-1)
 
     @Passive
@@ -98,7 +98,7 @@ class Prj(Project):
         lcd = self.s.lcd
         queue_len = self.s.queue_len
 
-        queue_len.set(len(Prj.VSYNC_QUEUE) - 1)
+        queue_len.set(len(self.VSYNC_QUEUE) - 1)
 
         if render.get() and lcd.get() and send_buffer.get() == render_buffer.get():
             corruption.set(corruption.get() + 1)
